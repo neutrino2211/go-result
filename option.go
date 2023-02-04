@@ -67,8 +67,20 @@ func NewOptional[T any](value interface{}) Optional[T] {
 	var tmp T
 
 	if reflect.ValueOf(value).Kind() == reflect.Ptr {
+		cast, ok := value.(T)
+
+		if !ok {
+			panic(
+				fmt.Sprintf(
+					"Failed to create Optional: %s to %s",
+					reflect.ValueOf(tmp).Type().Name(),
+					reflect.ValueOf(value).Type().Name(),
+				),
+			)
+		}
+
 		return Optional[T]{
-			data: value.(*T),
+			data: &cast,
 		}
 	}
 

@@ -2,6 +2,7 @@ package option
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"testing"
 )
@@ -51,6 +52,30 @@ func TestUnwrapOrElse(t *testing.T) {
 	}
 
 	fmt.Println(byt)
+}
+
+func TestUnwrapOrElseInterfaces(t *testing.T) {
+	outDir := "out"
+	dirInfo := NewOptionalPair[fs.FileInfo](os.Stat(outDir))
+
+	defer func() {
+		if err := recover(); err != nil {
+			t.Error("UnwrapOrElse with interfaces should work")
+		}
+	}()
+
+	path := dirInfo.UnwrapOrElse(func(err error) fs.FileInfo {
+		if os.IsNotExist(err) {
+			crDir := NewOptional[error](os.Mkdir(outDir, 0755))
+			crDir.ExpectNil("could not create directory '" + outDir + "'")
+		}
+
+		opt := NewOptionalPair[fs.FileInfo](os.Stat(outDir))
+
+		return opt.Expect("unable to create output directory")
+	})
+
+	fmt.Println(path.Name())
 }
 
 func TestUnwrapNil(t *testing.T) {
