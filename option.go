@@ -21,6 +21,12 @@ func (o *Optional[T]) Expect(err string) T {
 	return *o.data
 }
 
+func (o *Optional[T]) ExpectNil(err string) {
+	if o.data != nil {
+		panic(err)
+	}
+}
+
 func (o *Optional[T]) Or(value T) T {
 	if o.data == nil {
 		return value
