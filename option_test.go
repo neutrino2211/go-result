@@ -41,20 +41,16 @@ func TestOr(t *testing.T) {
 func TestUnwrapOrElse(t *testing.T) {
 	f := NewOptionalPair[[]byte](os.ReadFile("./test_data/file_does_not_exist.txt"))
 
-	defer func() {
-		if err := recover(); err == nil {
-			t.Error("Unwrap nil must not work")
-		}
-	}()
-
-	byt := f.UnwrapOrElse(func(err error) {
+	byt := f.UnwrapOrElse(func(err error) []byte {
 		fmt.Println(err.Error())
-		panic("Error")
+		return []byte{}
 	})
 
-	fmt.Println(byt)
+	if len(byt) > 0 {
+		t.Error("Should not have reached here")
+	}
 
-	t.Error("Should not have reached here")
+	fmt.Println(byt)
 }
 
 func TestUnwrapNil(t *testing.T) {

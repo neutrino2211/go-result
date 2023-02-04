@@ -35,10 +35,9 @@ func (o *Optional[T]) Or(value T) T {
 	return *o.data
 }
 
-func (o *Optional[T]) UnwrapOrElse(errFn func(err error)) T {
+func (o *Optional[T]) UnwrapOrElse(errFn func(err error) T) T {
 	if o.err != nil {
-		errFn(o.err)
-		panic(errYouIdiot)
+		return errFn(o.err)
 	}
 
 	return *o.data
