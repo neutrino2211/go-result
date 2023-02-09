@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"unsafe"
 )
 
 var errYouIdiot error = errors.New("you forgot to panic you idiot")
@@ -18,7 +19,18 @@ func (o *Optional[T]) Expect(err string) T {
 		panic(err)
 	}
 
-	return *o.data
+	deref := *o.data
+
+	if reflect.ValueOf(deref).Kind() == reflect.String {
+		ptr := unsafe.Pointer(&deref)
+		castString := (*string)(ptr)
+
+		if *castString == "" {
+			panic(err)
+		}
+	}
+
+	return deref
 }
 
 func (o *Optional[T]) ExpectNil(err string) {
@@ -52,7 +64,7 @@ func (o *Optional[T]) Unwrap() T {
 }
 
 func (o *Optional[T]) IsNil() bool {
-	return o.data == nil
+	return o.data == (*T)(nil)
 }
 
 func (o *Optional[T]) Error() string {
@@ -63,7 +75,7 @@ func (o *Optional[T]) Error() string {
 	return ""
 }
 
-func NewOptional[T any](value interface{}) Optional[T] {
+func newOptional[T any](value interface{}) Optional[T] {
 	var tmp T
 
 	if reflect.ValueOf(value).Kind() == reflect.Ptr {
@@ -111,7 +123,7 @@ func NewOptional[T any](value interface{}) Optional[T] {
 	}
 }
 
-func NewOptionalPair[T any](value interface{}, err error) Optional[T] {
+func newOptionalPair[T any](value interface{}, err error) Optional[T] {
 	if err != nil {
 		return Optional[T]{
 			data: nil,
@@ -119,5 +131,20 @@ func NewOptionalPair[T any](value interface{}, err error) Optional[T] {
 		}
 	}
 
-	return NewOptional[T](value)
+	return newOptional[T](value)
+}
+
+func None[T any]() Optional[T] {
+	return Optional[T]{
+		data: nil,
+		err:  errors.New("value is None"),
+	}
+}
+
+func Some[T any](value T) Optional[T] {
+	return newOptional[T](value)
+}
+
+func SomePair[T any](value T, err error) Optional[T] {
+	return newOptionalPair[T](value, err)
 }

@@ -8,8 +8,8 @@ import (
 )
 
 func TestIsNil(t *testing.T) {
-	i := NewOptional[int](30)
-	j := NewOptional[int](nil)
+	i := Some(30)
+	j := None[int]()
 
 	if i.IsNil() {
 		t.Error("int '30' can not be nil")
@@ -21,8 +21,8 @@ func TestIsNil(t *testing.T) {
 }
 
 func TestPrimitiveIsEqual(t *testing.T) {
-	i := NewOptional[int](30)
-	j := NewOptional[int](30)
+	i := Some(30)
+	j := Some(30)
 
 	if i.Unwrap() != j.Unwrap() {
 		t.Error("30 != 30")
@@ -30,17 +30,17 @@ func TestPrimitiveIsEqual(t *testing.T) {
 }
 
 func TestOr(t *testing.T) {
-	nilValue := NewOptional[int](nil)
+	nilValue := None[*int]()
+	twenty := 20
+	defaultValue := nilValue.Or(&twenty)
 
-	defaultValue := nilValue.Or(20)
-
-	if defaultValue != 20 {
+	if *defaultValue != 20 {
 		t.Error("Could not get 20")
 	}
 }
 
 func TestUnwrapOrElse(t *testing.T) {
-	f := NewOptionalPair[[]byte](os.ReadFile("./test_data/file_does_not_exist.txt"))
+	f := SomePair(os.ReadFile("./test_data/file_does_not_exist.txt"))
 
 	byt := f.UnwrapOrElse(func(err error) []byte {
 		fmt.Println(err.Error())
@@ -56,7 +56,7 @@ func TestUnwrapOrElse(t *testing.T) {
 
 func TestUnwrapOrElseInterfaces(t *testing.T) {
 	outDir := "out"
-	dirInfo := NewOptionalPair[fs.FileInfo](os.Stat(outDir))
+	dirInfo := SomePair(os.Stat(outDir))
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -66,11 +66,11 @@ func TestUnwrapOrElseInterfaces(t *testing.T) {
 
 	path := dirInfo.UnwrapOrElse(func(err error) fs.FileInfo {
 		if os.IsNotExist(err) {
-			crDir := NewOptional[error](os.Mkdir(outDir, 0755))
+			crDir := Some(os.Mkdir(outDir, 0755))
 			crDir.ExpectNil("could not create directory '" + outDir + "'")
 		}
 
-		opt := NewOptionalPair[fs.FileInfo](os.Stat(outDir))
+		opt := SomePair(os.Stat(outDir))
 
 		return opt.Expect("unable to create output directory")
 	})
@@ -79,7 +79,7 @@ func TestUnwrapOrElseInterfaces(t *testing.T) {
 }
 
 func TestUnwrapNil(t *testing.T) {
-	n := NewOptional[int](nil)
+	n := None[int]()
 
 	defer func() {
 		if err := recover(); err == nil {
@@ -91,7 +91,7 @@ func TestUnwrapNil(t *testing.T) {
 }
 
 func TestExpect(t *testing.T) {
-	e := NewOptional[int](nil)
+	e := None[int]()
 
 	defer func() {
 		if err := recover(); err == nil {
@@ -103,13 +103,13 @@ func TestExpect(t *testing.T) {
 }
 
 func TestRealWorld(t *testing.T) {
-	f := NewOptionalPair[[]byte](os.ReadFile("./test_data/file.txt"))
+	f := SomePair(os.ReadFile("./test_data/file.txt"))
 
 	if string(f.Expect("Could not read file")) != "Hello Go Options" {
 		t.Error("Failed to read file")
 	}
 
-	f = NewOptionalPair[[]byte](os.ReadFile("./test_data/file_does_not_exist.txt"))
+	f = SomePair(os.ReadFile("./test_data/file_does_not_exist.txt"))
 
 	if f.Error() == "" {
 		t.Error("Reading non-existent file should have errored")
