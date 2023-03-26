@@ -134,17 +134,19 @@ func newOptionalPair[T any](value interface{}, err error) Optional[T] {
 	return newOptional[T](value)
 }
 
-func None[T any]() Optional[T] {
-	return Optional[T]{
+func None[T any]() *Optional[T] {
+	return &Optional[T]{
 		data: nil,
 		err:  errors.New("value is None"),
 	}
 }
 
-func Some[T any](value T) Optional[T] {
-	return newOptional[T](value)
+func Some[T any](value T) *Optional[T] {
+	o := newOptional[T](value)
+	return &o
 }
 
-func SomePair[T any](value T, err error) Optional[T] {
-	return newOptionalPair[T](value, err)
+func SomePair[T any](value T, err error) *Optional[T] {
+	o := newOptionalPair[T](value, err)
+	return &o
 }

@@ -1,6 +1,7 @@
 package option
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -113,5 +114,19 @@ func TestRealWorld(t *testing.T) {
 
 	if f.Error() == "" {
 		t.Error("Reading non-existent file should have errored")
+	}
+}
+
+func TestChainCalls(t *testing.T) {
+	if !None[int]().IsNil() {
+		t.Error("None should not be nil")
+	}
+
+	if Some(10).Unwrap() != 10 {
+		t.Error("Unable to unwrap int value")
+	}
+
+	if SomePair(0, errors.New("Has an error")).Error() == "" {
+		t.Error("An errored value did not return an error")
 	}
 }
