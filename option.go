@@ -144,7 +144,7 @@ func None[T any]() *Optional[T] {
 func Err[T any](err_ error) *Optional[T] {
 	return &Optional[T]{
 		data: nil,
-		err: err_
+		err:  err_,
 	}
 }
 
