@@ -56,8 +56,10 @@ func (o *Optional[T]) UnwrapOrElse(errFn func(err error) T) T {
 }
 
 func (o *Optional[T]) Unwrap() T {
-	if o.data == nil {
+	if o.data == nil && o.err == nil {
 		panic("optional value is nil")
+	} else if o.data == nil {
+		panic(o.err)
 	}
 
 	return *o.data
