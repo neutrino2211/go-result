@@ -1,4 +1,4 @@
-package option
+package result
 
 import (
 	"errors"
@@ -128,5 +128,40 @@ func TestChainCalls(t *testing.T) {
 
 	if SomePair(0, errors.New("Has an error")).Error() == "" {
 		t.Error("An errored value did not return an error")
+	}
+}
+
+func TestFailingTry(t *testing.T) {
+	tr := Try(func() int {
+		i := 0
+
+		if i == 0 {
+			panic("Oh no!!")
+		}
+
+		return i
+	})
+
+	if !tr.IsNil() {
+		t.Error("Failed try should be nil")
+		return
+	}
+
+	fmt.Println(tr.Error())
+}
+
+func TestSuccessfulTry(t *testing.T) {
+	tr := Try(func() int {
+		i := 0
+
+		if i == 0 {
+			return 30
+		}
+
+		return i
+	})
+
+	if tr.Unwrap() != 30 {
+		t.Error("Unexpected unwrap result")
 	}
 }

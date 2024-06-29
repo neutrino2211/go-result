@@ -1,4 +1,4 @@
-package option
+package result
 
 import (
 	"errors"
@@ -9,12 +9,12 @@ import (
 
 var errYouIdiot error = errors.New("you forgot to panic you idiot")
 
-type Optional[T any] struct {
+type Result[T any] struct {
 	data *T
 	err  error
 }
 
-func (o *Optional[T]) Expect(err string) T {
+func (o *Result[T]) Expect(err string) T {
 	if o.data == nil {
 		panic(err)
 	}
@@ -33,13 +33,13 @@ func (o *Optional[T]) Expect(err string) T {
 	return deref
 }
 
-func (o *Optional[T]) ExpectNil(err string) {
+func (o *Result[T]) ExpectNil(err string) {
 	if o.data != nil {
 		panic(err)
 	}
 }
 
-func (o *Optional[T]) Or(value T) T {
+func (o *Result[T]) Or(value T) T {
 	if o.data == nil {
 		return value
 	}
@@ -47,7 +47,7 @@ func (o *Optional[T]) Or(value T) T {
 	return *o.data
 }
 
-func (o *Optional[T]) UnwrapOrElse(errFn func(err error) T) T {
+func (o *Result[T]) UnwrapOrElse(errFn func(err error) T) T {
 	if o.err != nil {
 		return errFn(o.err)
 	}
@@ -55,7 +55,7 @@ func (o *Optional[T]) UnwrapOrElse(errFn func(err error) T) T {
 	return *o.data
 }
 
-func (o *Optional[T]) Unwrap() T {
+func (o *Result[T]) Unwrap() T {
 	if o.data == nil && o.err == nil {
 		panic("optional value is nil")
 	} else if o.data == nil {
@@ -65,11 +65,11 @@ func (o *Optional[T]) Unwrap() T {
 	return *o.data
 }
 
-func (o *Optional[T]) IsNil() bool {
+func (o *Result[T]) IsNil() bool {
 	return o.data == (*T)(nil)
 }
 
-func (o *Optional[T]) Error() string {
+func (o *Result[T]) Error() string {
 	if o.err != nil {
 		return o.err.Error()
 	}
@@ -77,7 +77,7 @@ func (o *Optional[T]) Error() string {
 	return ""
 }
 
-func newOptional[T any](value interface{}) Optional[T] {
+func newOptional[T any](value interface{}) Result[T] {
 	var tmp T
 
 	if reflect.ValueOf(value).Kind() == reflect.Ptr {
@@ -93,13 +93,13 @@ func newOptional[T any](value interface{}) Optional[T] {
 			)
 		}
 
-		return Optional[T]{
+		return Result[T]{
 			data: &cast,
 		}
 	}
 
 	if value == nil {
-		return Optional[T]{
+		return Result[T]{
 			data: nil,
 		}
 	}
@@ -120,14 +120,14 @@ func newOptional[T any](value interface{}) Optional[T] {
 		panic("Failed optional cast")
 	}
 
-	return Optional[T]{
+	return Result[T]{
 		data: &cast,
 	}
 }
 
-func newOptionalPair[T any](value interface{}, err error) Optional[T] {
+func newOptionalPair[T any](value interface{}, err error) Result[T] {
 	if err != nil {
-		return Optional[T]{
+		return Result[T]{
 			data: nil,
 			err:  err,
 		}
@@ -136,26 +136,52 @@ func newOptionalPair[T any](value interface{}, err error) Optional[T] {
 	return newOptional[T](value)
 }
 
-func None[T any]() *Optional[T] {
-	return &Optional[T]{
+func None[T any]() *Result[T] {
+	return &Result[T]{
 		data: nil,
 		err:  errors.New("value is None"),
 	}
 }
 
-func Err[T any](err_ error) *Optional[T] {
-	return &Optional[T]{
+func Err[T any](err_ error) *Result[T] {
+	return &Result[T]{
 		data: nil,
 		err:  err_,
 	}
 }
 
-func Some[T any](value T) *Optional[T] {
+func Some[T any](value T) *Result[T] {
 	o := newOptional[T](value)
 	return &o
 }
 
-func SomePair[T any](value T, err error) *Optional[T] {
+func SomePair[T any](value T, err error) *Result[T] {
 	o := newOptionalPair[T](value, err)
 	return &o
+}
+
+func innerTry[T any](fn func() T) *Result[T] {
+	var ropt error
+	defer func() {
+		if err := recover(); err != nil {
+			ropt = fmt.Errorf("Try Error: #%v", err)
+		}
+	}()
+
+	rs := fn()
+
+	return &Result[T]{
+		data: &rs,
+		err:  ropt,
+	}
+}
+
+func Try[T any](fn func() T) *Result[T] {
+	r := innerTry(fn)
+
+	if r == nil {
+		return None[T]()
+	}
+
+	return r
 }
