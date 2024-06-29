@@ -12,7 +12,7 @@ Rust-like error and nil value handling for Go
 Install go-option via `go get`
 
 ```bash
-  go get -uv https://github.com/neutrino2211/go-option
+  go get -uv https://github.com/neutrino2211/go-result
 ```
     
 ## Documentation
