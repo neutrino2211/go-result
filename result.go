@@ -160,11 +160,10 @@ func SomePair[T any](value T, err error) *Result[T] {
 	return &o
 }
 
-func innerTry[T any](fn func() T) *Result[T] {
-	var ropt error
+func innerTry[T any](fn func() T, errorOut *string) *Result[T] {
 	defer func() {
 		if err := recover(); err != nil {
-			ropt = fmt.Errorf("Try Error: #%v", err)
+			*errorOut = fmt.Sprintf("%v", err)
 		}
 	}()
 
@@ -172,15 +171,16 @@ func innerTry[T any](fn func() T) *Result[T] {
 
 	return &Result[T]{
 		data: &rs,
-		err:  ropt,
+		err:  nil,
 	}
 }
 
 func Try[T any](fn func() T) *Result[T] {
-	r := innerTry(fn)
+	var err string = ""
+	r := innerTry(fn, &err)
 
 	if r == nil {
-		return None[T]()
+		return Err[T](errors.New(err))
 	}
 
 	return r
